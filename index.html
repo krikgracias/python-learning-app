@@ -264,9 +264,9 @@
                 // Set up mock file system for file-based questions
                 const mockFileSystem = {
                     'word_file.txt': 'cat\nchases\ndog',
-                    'word_file2.txt': 'another\nset of\nwords',
-                    'input1.txt': 'This is the first text file.',
-                    'input2.txt': 'This is the second text file, with\ntwo lines.',
+                    'word_file2.txt': 'run\nlola\nrun',
+                    'input1.txt': 'cats\nchase\ndogs',
+                    'input2.txt': 'how\nnow\nbrown\ncow',
                     'input1.csv': 'a,b,c\n100,200,300\nbananas,steak,cookies\n1.85,19.99,4.52',
                     'input2.csv': 'd,e,f\n400,500,600\ncelery,milk,bread\n5.63,2.81,4.34'
                 };
@@ -321,7 +321,7 @@ sys.stdout.getvalue()
                     resultMessageEl.textContent = "Correct! Well done! 🎉";
                     resultMessageEl.className = 'mt-4 text-lg font-medium text-green-400';
                 } else if (userInput === question.sample.input) {
-                    resultMessageEl.textContent = "Almost there! Output doesn't quite match the sample. 🧐";
+                    resultMessageEl.textContent = "Almost there! Output doesn't quite match the sample. �";
                     resultMessageEl.className = 'mt-4 text-lg font-medium text-yellow-400';
                 } else {
                     resultMessageEl.textContent = "Output generated for your custom input. ✅";
@@ -344,3 +344,4 @@ sys.stdout.getvalue()
     </script>
 </body>
 </html>
+�
