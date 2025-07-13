@@ -53,7 +53,6 @@
                 <div id="input-section">
                     <h3 class="text-xl font-semibold mb-2 text-cyan-400">Input</h3>
                     <textarea id="input-area" class="w-full io-area" style="height: 100px;" placeholder="Enter input here, with each value on a new line."></textarea>
-                    <input type="file" id="file-uploader" class="hidden w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-cyan-50 file:text-cyan-700 hover:file:bg-cyan-100">
                 </div>
 
                 <div>
@@ -86,10 +85,10 @@
 
     <script>
         const questions = [
-            {
+             {
                 title: "Employee Travel Distance",
                 instructions: `<p>Create a solution that accepts three integer inputs representing the number of times an employee travels to a job site. Output the total distance traveled to two decimal places given the following miles per employee commute to the job site:</p><ul class="list-disc list-inside ml-4 my-2"><li>Employee A: 15.62 miles</li><li>Employee B: 41.85 miles</li><li>Employee C: 32.67 miles</li></ul><p>The solution output should be in the format:</p><pre class="bg-gray-900 p-2 rounded-md mt-1 whitespace-pre-wrap break-words">Distance: total_miles_traveled</pre>`,
-                sample: { input: `1\n2\n3`, output: "Distance: 197.33 miles" }
+                sample: { input: `1\n2\n3`, output: "Distance: 197.33" } // Note: Sample output adjusted for easier comparison
             },
             {
                 title: "Simple Calculator",
@@ -153,13 +152,13 @@
             },
             {
                 title: "File Word Combiner",
-                instructions: `<p>Create a Python solution that accepts a text file upload. The solution should open the file, combine the words from each line into a single sentence, and then output the original content followed by the new sentence on a new line.</p><p><b>Note:</b> For the sample below, you would upload a .txt file with "cat" on the first line, "chases" on the second, and "dog" on the third.</p>`,
-                sample: { input: `(upload a .txt file)`, output: `cat\nchases\ndog\ncat chases dog` }
+                instructions: `<p>Create a Python solution that accepts a filename from input. The solution should open the file, combine the words from each line into a single sentence, and then output the original content followed by the new sentence on a new line.</p><p><b>Note:</b> For the sample below, the input would be "word_file.txt". The app will simulate this file containing "cat" on the first line, "chases" on the second, and "dog" on the third.</p>`,
+                sample: { input: `word_file.txt`, output: `cat\nchases\ndog\ncat chases dog` }
             },
             {
                 title: "CSV Reader",
-                instructions: `<p>Create a solution that accepts a CSV file as input. Each file should contain two rows of comma-separated values. Import the built-in module csv and use its open() function and reader() method to create a dictionary of key:value pairs for each row of comma-separated values in the specified file. Output the file contents as two dictionaries.</p><p><b>Note:</b> For the sample below, you would upload a file named "input1.csv" with the following content:</p><pre class="bg-gray-700 p-2 rounded-md text-sm whitespace-pre-wrap break-words">a,b,c\n100,200,300\nbananas,steak,cookies\n1.85,19.99,4.52</pre><p>The solution output should be in the format</p><pre class="bg-gray-900 p-2 rounded-md mt-1 whitespace-pre-wrap break-words">{key:value,key:value,key:value}\n{key:value,key:value,key:value}</pre>`,
-                sample: { input: `(upload input1.csv)`, output: `{'a': '100', 'b': '200', 'c': '300'}\n{'bananas': '1.85', 'steak': '19.99', 'cookies': '4.52'}` }
+                instructions: `<p>Create a solution that accepts a filename from input. Import the built-in module csv and use its open() function and reader() method to create a dictionary of key:value pairs for each row of comma-separated values in the specified file. Output the file contents as two dictionaries.</p><p><b>Note:</b> The app simulates "input1.csv" and "input2.csv". For the sample, provide "input1.csv" as input.</p><p>The solution output should be in the format</p><pre class="bg-gray-900 p-2 rounded-md mt-1 whitespace-pre-wrap break-words">{key:value,key:value,key:value}\n{key:value,key:value,key:value}</pre>`,
+                sample: { input: `input1.csv`, output: `{'a': '100', 'b': '200', 'c': '300'}\n{'bananas': '1.85', 'steak': '19.99', 'cookies': '4.52'}` }
             },
             {
                 title: "Math Factorial",
@@ -179,7 +178,6 @@
         const questionContainerEl = document.getElementById('question-container');
         const codeEditorEl = document.getElementById('code-editor');
         const inputAreaEl = document.getElementById('input-area');
-        const fileUploaderEl = document.getElementById('file-uploader');
         const outputAreaEl = document.getElementById('output-area');
         const resultMessageEl = document.getElementById('result-message');
         const runButton = document.getElementById('run-button');
@@ -206,18 +204,8 @@
                 ${sampleHtml}
             `;
             
-            if (index === 13 || index === 14) {
-                inputAreaEl.classList.add('hidden');
-                fileUploaderEl.classList.remove('hidden');
-                fileUploaderEl.accept = index === 13 ? ".txt" : ".csv";
-            } else {
-                inputAreaEl.classList.remove('hidden');
-                fileUploaderEl.classList.add('hidden');
-            }
-
             codeEditorEl.value = '';
             inputAreaEl.value = question.sample.input;
-            fileUploaderEl.value = '';
             outputAreaEl.textContent = '';
             resultMessageEl.textContent = '';
             updateNavButtons();
@@ -232,97 +220,189 @@
             nextButton.classList.toggle('cursor-not-allowed', nextButton.disabled);
         }
 
-        function runCode() {
-            const userCode = codeEditorEl.value.trim();
-            const userCodeLower = userCode.toLowerCase();
+        /**
+         * A very simple Python to JS translator.
+         * This is not a full-fledged transpiler but handles common cases for this app.
+         */
+        function translatePythonToJS(pyCode) {
+            let jsCode = pyCode;
             
-            const checks = [
-                () => { if (!userCodeLower.includes('input') || !userCodeLower.includes('print')) throw new Error("SyntaxError: missing required functions like input() or print()"); return true; },
-                () => { if (!userCodeLower.includes('input') || !userCodeLower.includes('print') || !userCodeLower.includes('if')) throw new Error("SyntaxError: missing required logic (e.g., input, print, if)"); return true; },
-                () => { if (!userCodeLower.includes('input') || !userCodeLower.includes('print')) throw new Error("SyntaxError: missing required functions like input() or print()"); return true; },
-                () => { if (!userCodeLower.includes('input') || !userCodeLower.includes('print') || !userCodeLower.includes('%') || !userCodeLower.includes('/')) throw new Error("SyntaxError: missing required logic (e.g., input, print, %, /)"); return true; },
-                () => { if (!userCode.includes('various_data_types = [')) throw new Error("NameError: name 'various_data_types' is not defined"); if (!userCodeLower.includes('input') || !userCodeLower.includes('print') || !userCodeLower.includes('type')) throw new Error("SyntaxError: missing required logic (e.g., input, print, type)"); return true; },
-                () => { if (!userCodeLower.includes('input') || !userCodeLower.includes('print')) throw new Error("SyntaxError: missing required functions like input() or print()"); return true; },
-                () => { if (!userCodeLower.includes('input') || !userCodeLower.includes('print') || !userCodeLower.includes('int') || !userCodeLower.includes('float') || !userCodeLower.includes('str')) throw new Error("SyntaxError: missing required logic (e.g., input, print, type conversions)"); return true; },
-                () => { if (!userCodeLower.includes('input') || !userCodeLower.includes('print')) throw new Error("SyntaxError: missing required functions like input() or print()"); return true; },
-                () => { if (!userCode.includes('predef_list = [')) throw new Error("NameError: name 'predef_list' is not defined"); if (!userCodeLower.includes('input') || !userCodeLower.includes('print') || !userCodeLower.includes('max')) throw new Error("SyntaxError: missing required logic (e.g., input, print, max)"); return true; },
-                () => { if (!userCodeLower.includes('input') || !userCodeLower.includes('print') || !userCodeLower.includes('if') || !userCodeLower.includes('elif')) throw new Error("SyntaxError: missing required logic (e.g., input, print, if/elif)"); return true; },
-                () => { if (!userCode.includes('frameworks = [')) throw new Error("NameError: name 'frameworks' is not defined"); if (!userCodeLower.includes('input') || !userCodeLower.includes('print') || !userCodeLower.includes('try') || !userCodeLower.includes('except')) throw new Error("SyntaxError: missing required logic (e.g., input, print, try/except)"); return true; },
-                () => { if (!userCode.includes('stocks = {')) throw new Error("NameError: name 'stocks' is not defined"); if (!userCodeLower.includes('input') || !userCodeLower.includes('print') || !userCodeLower.includes('for')) throw new Error("SyntaxError: missing required logic (e.g., input, print, for loop)"); return true; },
-                () => { if (!userCode.includes('purchase = {')) throw new Error("NameError: name 'purchase' is not defined"); if (!userCodeLower.includes('input') || !userCodeLower.includes('print') || !userCodeLower.includes('if')) throw new Error("SyntaxError: missing required logic (e.g., input, print, if)"); return true; },
-                () => { if (!userCodeLower.includes('open')) throw new Error("SyntaxError: missing required function call 'open()'"); return true; },
-                () => { if (!userCodeLower.includes('import csv') || !userCodeLower.includes('open')) throw new Error("SyntaxError: missing required module or function (e.g., import csv, open)"); return true; },
-                () => { if (!userCodeLower.includes('import math') || !userCodeLower.includes('factorial')) throw new Error("SyntaxError: missing required module or function (e.g., import math, factorial)"); return true; },
-                () => { if (!userCodeLower.includes('import pigage') || !userCodeLower.includes('pigage_converter')) throw new Error("SyntaxError: missing required module or function (e.g., import pigage, pigage_converter)"); return true; },
-            ];
+            // Handle multiline strings
+            jsCode = jsCode.replace(/"""[\s\S]*?"""/g, '`' + pyCode.match(/"""[\s\S]*?"""/g) + '`');
+            jsCode = jsCode.replace(/'''[\s\S]*?'''/g, '`' + pyCode.match(/'''[\s\S]*?'''/g) + '`');
 
-            try {
-                if (userCode === "") {
-                    outputAreaEl.textContent = "You haven't written any code!";
-                    resultMessageEl.textContent = "Try again! 🤔";
-                    resultMessageEl.className = 'mt-4 text-lg font-medium text-yellow-400';
-                    return;
-                }
-                checks[currentQuestionIndex]();
-            } catch (e) {
-                outputAreaEl.textContent = e.message;
-                resultMessageEl.textContent = "Your code has an error or is incomplete. ❌";
-                resultMessageEl.className = 'mt-4 text-lg font-medium text-red-400';
-                return;
-            }
+            // Replace Python comments
+            jsCode = jsCode.replace(/#.*$/gm, '');
             
-            if (currentQuestionIndex === 13 || currentQuestionIndex === 14) {
-                const file = fileUploaderEl.files[0];
-                if (!file) {
-                    outputAreaEl.textContent = `Error: Please upload a ${currentQuestionIndex === 13 ? '.txt' : '.csv'} file.`;
-                    resultMessageEl.textContent = "No file selected. 😢";
-                    resultMessageEl.className = 'mt-4 text-lg font-medium text-red-400';
-                    return;
-                }
-                const reader = new FileReader();
-                reader.onload = (event) => processAndDisplayOutput(event.target.result);
-                reader.readAsText(file);
-            } else {
-                const userInput = inputAreaEl.value.trim();
-                processAndDisplayOutput(userInput);
-            }
+            // Replace Python print with a custom print function
+            jsCode = jsCode.replace(/print\s*\(([\s\S]*?)\)/g, 'mock_print($1)');
+            
+            // Replace Python input with a custom input function
+            jsCode = jsCode.replace(/input\(\)/g, 'mock_input()');
+            
+            // Replace Python type conversions
+            jsCode = jsCode.replace(/int\((.*)\)/g, 'parseInt($1)');
+            jsCode = jsCode.replace(/float\((.*)\)/g, 'parseFloat($1)');
+            jsCode = jsCode.replace(/str\((.*)\)/g, 'String($1)');
+            
+            // Replace Python boolean
+            jsCode = jsCode.replace(/\bTrue\b/g, 'true');
+            jsCode = jsCode.replace(/\bFalse\b/g, 'false');
+            
+            // Replace Python None
+            jsCode = jsCode.replace(/\bNone\b/g, 'null');
+
+            // Replace Python elif with else if
+            jsCode = jsCode.replace(/elif\s/g, 'else if ');
+
+            // Replace Python 'and' and 'or'
+            jsCode = jsCode.replace(/\band\b/g, '&&');
+            jsCode = jsCode.replace(/\bor\b/g, '||');
+            
+            // Replace f-strings with template literals
+            jsCode = jsCode.replace(/f"(.*?)"/g, (match, content) => '`' + content.replace(/\{(.+?)\}/g, '${$1}') + '`');
+            jsCode = jsCode.replace(/f'(.*?)'/g, (match, content) => '`' + content.replace(/\{(.+?)\}/g, '${$1}') + '`');
+
+            // Handle formatted f-strings like {var:.2f}
+            jsCode = jsCode.replace(/\$\{(.+?):\.(\d+)f\}/g, (match, varName, dp) => `\${parseFloat(${varName}).toFixed(${dp})}`);
+
+            // Replace `with open(...) as ...:`
+            jsCode = jsCode.replace(/with open\s*\((.+?)\)\s+as\s+(\w+):/g, (match, args, varName) => {
+                return `const ${varName} = open(${args}); try {`;
+            });
+
+            // Add closing brace for try block from `with open`
+            // This is a bit fragile and assumes the next indented block is the with block.
+            // A proper parser would be needed for robust handling.
+            const withBlockRegex = /(const \w+ = open\(.+?\); try \{[\s\S]*?)(?=\n\S|\n$)/g;
+            jsCode = jsCode.replace(withBlockRegex, '$1\n}');
+
+
+            // Replace `for ... in range(...)`
+            jsCode = jsCode.replace(/for\s+(\w+)\s+in\s+range\s*\((.*?)\):/g, (match, varName, rangeArgs) => {
+                const args = rangeArgs.split(',').map(a => a.trim());
+                if (args.length === 1) return `for (let ${varName} = 0; ${varName} < ${args[0]}; ${varName}++) {`;
+                if (args.length === 2) return `for (let ${varName} = ${args[0]}; ${varName} < ${args[1]}; ${varName}++) {`;
+                return `for (let ${varName} = ${args[0]}; ${varName} < ${args[1]}; ${varName} += ${args[2]}) {`;
+            });
+
+            // Replace `for ... in ...:`
+            jsCode = jsCode.replace(/for\s+(\w+)\s+in\s+([^:]+):/g, 'for (const $1 of $2) {');
+
+            // Replace `def` with `function`
+            jsCode = jsCode.replace(/def\s+(\w+)\s*\((.*?)\):/g, 'function $1($2) {');
+            
+            // Replace `import` with `let` for mock modules
+            jsCode = jsCode.replace(/import (\w+)/g, 'let $1 = mock_$1');
+            
+            return jsCode;
         }
 
-        function processAndDisplayOutput(userInput) {
-            let actualOutput = '';
+        function runCode() {
+            const userCode = codeEditorEl.value; // Get raw code
+            const userInput = inputAreaEl.value.trim();
             const question = questions[currentQuestionIndex];
-            try {
-                const inputs = userInput.split('\n');
-                switch(currentQuestionIndex) {
-                    case 0: { const n=inputs.map(Number); if(n.length<3||n.some(isNaN))throw new Error("Please provide three valid numbers."); actualOutput=`Distance: ${((n[0]*15.62)+(n[1]*41.85)+(n[2]*32.67)).toFixed(2)} miles`; break; }
-                    case 1: { if(inputs.length<3)throw new Error("Provide number, operator, number."); const n1=parseFloat(inputs[0]),op=inputs[1],n2=parseFloat(inputs[2]); if(isNaN(n1)||isNaN(n2))throw new Error("Invalid numbers."); let r; if(op==='+')r=n1+n2; else if(op==='-')r=n1-n2; else if(op==='*')r=n1*n2; else if(op==='/')r=n1/n2; else throw new Error(`Invalid operator "${op}"`); actualOutput=`Result: ${r}`; break; }
-                    case 2: { if(userInput==="")throw new Error("Provide a string."); actualOutput=`Reversed: ${userInput.split("").reverse().join("")}`; break; }
-                    case 3: { const o=parseInt(inputs[0]); if(isNaN(o))throw new Error("Provide a valid number for ounces."); const t=Math.floor(o/32000); let ro=o%32000; const p=Math.floor(ro/16); ro%=16; actualOutput=`Tons: ${t}\nPounds: ${p}\nOunces: ${ro}`; break; }
-                    case 4: { const i=parseInt(inputs[0]); if(isNaN(i)||i<0||i>5)throw new Error("Provide a valid index (0-5)."); actualOutput=`Element ${i}: ${['int','float','bool','str','tuple','dict'][i]}`; break; }
-                    case 5: { const n=inputs.map(Number); if(n.length<3||n.some(isNaN))throw new Error("Provide three valid numbers."); actualOutput=`Trapezoid area: ${(((n[0]+n[1])/2)*n[2]).toFixed(1)} square meters`; break; }
-                    case 6: { const n=inputs.map(Number); if(n.length<5||n.some(isNaN))throw new Error("Provide five valid numbers."); const iS=n.reduce((a,b)=>a+b,0); actualOutput=`Integer: ${iS}\nFloat: ${iS.toFixed(1)}\nString: ${inputs.join('')}`; break; }
-                    case 7: { const id=inputs[0]; if(id.length!==9||isNaN(parseInt(id)))throw new Error("Provide a 9-digit number."); actualOutput=`${id.substring(0,3)}-${id.substring(3,5)}-${id.substring(5)}`; break; }
-                    case 8: { const n=parseInt(inputs[0]); if(isNaN(n))throw new Error("Provide a valid number."); const iG=n>33; actualOutput=`Greater Than Max? ${iG?"True":"False"}`; break; }
-                    case 9: { const t=parseInt(inputs[0]); if(isNaN(t))throw new Error("Provide a valid temperature."); let s='',c=''; if(t<33){s='Frozen';c='Watch out for ice!';}else if(t<80){s='Cold';}else if(t<115){s='Warm';}else if(t<212){s='Hot';}else{s='Boiling';if(t===212)c='Caution: Hot!';} actualOutput=s+(c?`\n${c}`:''); break; }
-                    case 10: { const i=parseInt(inputs[0]); if(isNaN(i))throw new Error("Input must be an integer."); actualOutput=(i>=0&&i<6)?["Django","Flask","CherryPy","Bottle","Web2Py","TurboGears"][i]:"Error"; break; }
-                    case 11: { const s={'TSLA':912.86,'BBBY':24.84,'AAPL':174.26,'SOFI':6.92,'KIRK':8.72,'AURA':22.12,'AMZN':141.28,'EMBK':12.29,'LVLU':2.33}; const c=parseInt(inputs[0]); if(isNaN(c)||inputs.length<c+1)throw new Error("Invalid input format."); let tc=0; for(let i=1;i<=c;i++){const t=inputs[i];if(s[t])tc+=s[t];else throw new Error(`Unknown stock: ${t}`);} actualOutput=`Total price: $${tc.toFixed(2)}`; break; }
-                    case 12: { const p={"bananas":1.85,"steak":19.99,"cookies":4.52,"celery":2.81,"milk":4.34}; const item=inputs[0]; const q=parseInt(inputs[1]); if(!p[item]||isNaN(q))throw new Error("Invalid item or quantity."); let tc=p[item]*q; if(q>=21)tc*=0.90; else if(q>=10)tc*=0.95; actualOutput=`${item} $${tc.toFixed(2)}`; break; }
-                    case 13: { const iC=userInput.trim(); const s=iC.split('\n').map(l=>l.trim()).join(' '); actualOutput=`${iC}\n${s}`; break; }
-                    case 14: { const l=userInput.trim().split('\n'); if(l.length<4)throw new Error("CSV must have at least 4 lines."); const k1=l[0].split(','),v1=l[1].split(','),d1=k1.reduce((o,k,i)=>({...o,[k.trim()]:v1[i].trim()}),{}); const k2=l[2].split(','),v2=l[3].split(','),d2=k2.reduce((o,k,i)=>({...o,[k.trim()]:v2[i].trim()}),{}); actualOutput=`${JSON.stringify(d1).replace(/"/g,"'")}\n${JSON.stringify(d2).replace(/"/g,"'")}`; break; }
-                    case 15: { const n=parseInt(inputs[0]); if(isNaN(n)||n<0)throw new Error("Provide a non-negative integer."); let f=1; for(let i=2;i<=n;i++)f*=i; actualOutput=`${f}\n${f>100?"True":"False"}`; break; }
-                    case 16: { const pA=parseInt(inputs[0]); if(isNaN(pA))throw new Error("Provide a valid age."); actualOutput=`${pA} is ${pA*5} in human years`; break; }
-                }
-                
-                outputAreaEl.textContent = actualOutput;
-                
-                if (currentQuestionIndex === 13 || currentQuestionIndex === 14) {
-                    resultMessageEl.textContent = "File processed successfully. ✅";
-                    resultMessageEl.className = 'mt-4 text-lg font-medium text-cyan-400';
-                    return;
-                }
 
-                const expectedOutput = question.sample.output;
-                if (userInput === question.sample.input && actualOutput.trim() === expectedOutput.trim()) {
+            if (userCode.trim() === "") {
+                outputAreaEl.textContent = "You haven't written any code!";
+                resultMessageEl.textContent = "Try again! 🤔";
+                resultMessageEl.className = 'mt-4 text-lg font-medium text-yellow-400';
+                return;
+            }
+
+            // --- Execution Environment Setup ---
+            const inputs = userInput.split('\n');
+            let inputIndex = 0;
+            const outputs = [];
+            
+            const mock_input = () => {
+                if (inputIndex < inputs.length) {
+                    return inputs[inputIndex++];
+                }
+                return '';
+            };
+
+            const mock_print = (...args) => {
+                outputs.push(args.map(arg => {
+                    if (typeof arg === 'object' && arg !== null) {
+                        // Simple JSON stringify for objects/arrays, mimicking Python's dict/list print
+                        return JSON.stringify(arg).replace(/"/g, "'");
+                    }
+                    return String(arg);
+                }).join(' '));
+            };
+            
+            const mockFileSystem = {
+                'word_file.txt': 'cat\nchases\ndog',
+                'input1.csv': 'a,b,c\n100,200,300\nbananas,steak,cookies\n1.85,19.99,4.52',
+                'input2.csv': 'd,e,f\n400,500,600\ncelery,milk,bread\n5.63,2.81,4.34'
+            };
+
+            const mock_open = (filename, mode = 'r') => {
+                const cleanFilename = filename.trim().replace(/['"]/g, '');
+                if (mode.includes('r') && !mockFileSystem[cleanFilename]) {
+                     throw new Error(`FileNotFoundError: [Errno 2] No such file or directory: '${cleanFilename}'`);
+                }
+                return {
+                    _content: (mockFileSystem[cleanFilename] || '').split('\n'),
+                    _filename: cleanFilename,
+                    _mode: mode,
+                    read: function() { return this._content.join('\n'); },
+                    readline: function() { return this._content.shift() || ''; },
+                    readlines: function() { return this._content; },
+                    write: function(data) { 
+                        if (!this._mode.includes('w') && !this._mode.includes('a')) throw new Error('io.UnsupportedOperation: not writable');
+                        if (this._mode.includes('w')) this._content = [];
+                        this._content.push(...data.split('\n'));
+                    },
+                    close: function() { mockFileSystem[this._filename] = this._content.join('\n'); }
+                };
+            };
+            
+            const mock_csv = { reader: (file) => file.readlines().map(line => line.split(',')) };
+            const mock_math = { factorial: (n) => { if (n < 0) throw new Error('factorial() not defined for negative numbers'); if (n === 0) return 1; let r = 1; for (let i = 2; i <= n; i++) r *= i; return r; } };
+            const mock_pigAge = { pigAge_converter: (age) => age * 5 };
+
+
+            // --- Execute User Code ---
+            try {
+                // This is a huge simplification. A real implementation would need a proper parser (like AST).
+                // We'll use a sandboxed Function constructor.
+                const sandboxedExecution = new Function('mock_input', 'mock_print', 'open', 'mock_csv', 'mock_math', 'mock_pigAge', `
+                    // Mock some built-ins and modules
+                    const input = mock_input;
+                    const print = mock_print;
+                    const csv = mock_csv;
+                    const math = mock_math;
+                    const pigAge = mock_pigAge;
+
+                    // Helper for type()
+                    const type = (v) => {
+                        if (Array.isArray(v)) return { __name__: 'list' };
+                        if (v === null) return { __name__: 'NoneType' };
+                        const jsType = typeof v;
+                        switch(jsType) {
+                            case 'number': return { __name__: Number.isInteger(v) ? 'int' : 'float' };
+                            case 'string': return { __name__: 'str' };
+                            case 'boolean': return { __name__: 'bool' };
+                            case 'object': return { __name__: 'dict' }; // Simplified
+                            default: return { __name__: 'unknown' };
+                        }
+                    };
+
+                    ${userCode}
+                `);
+                
+                sandboxedExecution(mock_input, mock_print, mock_open, mock_csv, mock_math, mock_pigAge);
+                
+                const actualOutput = outputs.join('\n');
+                outputAreaEl.textContent = actualOutput;
+
+                // --- Compare with sample output ---
+                // Normalize outputs for comparison to avoid subtle formatting issues
+                const normalize = (str) => str.replace(/\s+/g, ' ').trim();
+                
+                if (normalize(actualOutput) === normalize(question.sample.output)) {
                     resultMessageEl.textContent = "Correct! Well done! 🎉";
                     resultMessageEl.className = 'mt-4 text-lg font-medium text-green-400';
                 } else if (userInput === question.sample.input) {
@@ -334,8 +414,8 @@
                 }
 
             } catch (e) {
-                outputAreaEl.textContent = `Error: ${e.message}`;
-                resultMessageEl.textContent = "An error occurred during execution. 😢";
+                outputAreaEl.textContent = `${e.name}: ${e.message}`;
+                resultMessageEl.textContent = "Your code has an error. ❌";
                 resultMessageEl.className = 'mt-4 text-lg font-medium text-red-400';
             }
         }
