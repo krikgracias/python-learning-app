@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python Learning App</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .code-editor {
+            font-family: 'monospace';
+            background-color: #1E1E1E;
+            color: #D4D4D4;
+            border: 1px solid #333;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            height: 300px;
+            resize: vertical;
+        }
+        .io-area {
+            font-family: 'monospace';
+            background-color: #1E1E1E;
+            color: #D4D4D4;
+            border: 1px solid #333;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            min-height: 100px;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white p-4 sm:p-6 md:p-8">
+
+    <div class="max-w-7xl mx-auto">
+        <header class="text-center mb-8">
+            <h1 class="text-3xl sm:text-4xl font-bold text-cyan-400">Python Practice Pad</h1>
+            <p class="text-gray-400 mt-2">Test your Python skills with these challenges.</p>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Left Panel: Question, Input, and Output -->
+            <div class="bg-gray-800 p-6 rounded-lg shadow-lg flex flex-col gap-4">
+                <div>
+                    <h2 class="text-2xl font-semibold mb-4 text-cyan-400">Question <span id="question-number">1</span></h2>
+                    <div id="question-container" class="text-gray-300 space-y-4">
+                        <!-- Question content will be injected here -->
+                    </div>
+                </div>
+                
+                <div id="input-section">
+                    <h3 class="text-xl font-semibold mb-2 text-cyan-400">Input</h3>
+                    <textarea id="input-area" class="w-full io-area" style="height: 100px;" placeholder="Enter input here, with each value on a new line."></textarea>
+                    <input type="file" id="file-uploader" class="hidden w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-cyan-50 file:text-cyan-700 hover:file:bg-cyan-100">
+                </div>
+
+                <div>
+                     <h3 class="text-xl font-semibold mb-2 text-cyan-400">Output</h3>
+                     <div id="output-area" class="io-area"></div>
+                     <div id="result-message" class="mt-4 text-lg font-medium"></div>
+                </div>
+            </div>
+
+            <!-- Right Panel: Code Editor -->
+            <div class="bg-gray-800 p-6 rounded-lg shadow-lg">
+                <h2 class="text-2xl font-semibold mb-4 text-cyan-400">Your Code</h2>
+                <textarea id="code-editor" class="w-full code-editor" placeholder="Write your Python code here..."></textarea>
+                <div class="mt-4 flex justify-between items-center">
+                    <button id="run-button" class="bg-cyan-500 hover:bg-cyan-600 text-white font-bold py-2 px-6 rounded-lg transition duration-300">
+                        Run Code
+                    </button>
+                    <div class="flex gap-2">
+                        <button id="prev-button" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300">
+                            &lt; Prev
+                        </button>
+                        <button id="next-button" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300">
+                            Next &gt;
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const questions = [
+            {
+                title: "Employee Travel Distance",
+                instructions: `<p>Create a solution that accepts three integer inputs representing the number of times an employee travels to a job site. Output the total distance traveled to two decimal places given the following miles per employee commute to the job site:</p><ul class="list-disc list-inside ml-4 my-2"><li>Employee A: 15.62 miles</li><li>Employee B: 41.85 miles</li><li>Employee C: 32.67 miles</li></ul><p>The solution output should be in the format:</p><pre class="bg-gray-900 p-2 rounded-md mt-1 whitespace-pre-wrap break-words">Distance: total_miles_traveled</pre>`,
+                sample: { input: `1\n2\n3`, output: "Distance: 197.33 miles" }
+            },
+            {
+                title: "Simple Calculator",
+                instructions: `<p>Create a program that takes two numbers and an operator (+, -, *, /) as input and performs the corresponding calculation.</p><p>The solution output should be in the format:</p><pre class="bg-gray-900 p-2 rounded-md mt-1 whitespace-pre-wrap break-words">Result: your_result</pre>`,
+                sample: { input: `10\n+\n5`, output: "Result: 15" }
+            },
+            {
+                title: "String Reversal",
+                instructions: `<p>Write a Python function that takes a string as input and returns the string reversed.</p><p>The solution output should be in the format:</p><pre class="bg-gray-900 p-2 rounded-md mt-1 whitespace-pre-wrap break-words">Reversed: your_reversed_string</pre>`,
+                sample: { input: `hello world`, output: "Reversed: dlrow olleh" }
+            },
+            {
+                title: "Ounces Conversion",
+                instructions: `<p>Create a solution that accepts an integer input representing any number of ounces. Output the converted total number of tons, pounds, and remaining ounces based on the input ounces value. There are 16 ounces in a pound and 2,000 pounds in a ton.</p><p>The solution output should be in the format</p><pre class="bg-gray-900 p-2 rounded-md mt-1 whitespace-pre-wrap break-words">Tons: value_1\nPounds: value_2\nOunces: value_3</pre>`,
+                sample: { input: `32035`, output: `Tons: 1\nPounds: 2\nOunces: 3` }
+            },
+            {
+                title: "Data Type Checker",
+                instructions: `<p>Create a solution that accepts an integer input representing the index value for any any of the five elements in the following list:</p><pre class="bg-gray-900 p-2 rounded-md my-1 whitespace-pre-wrap break-words">various_data_types = [516, 112.49, True, "meow", ("Western", "Governors", "University"), {"apple": 1, "pear": 5}]</pre><p>Using the built-in function type() and getting its name by using the .__name__ attribute, output data type based on the input index value.</p><p>The solution output should be in the format</p><pre class="bg-gray-900 p-2 rounded-md mt-1 whitespace-pre-wrap break-words">Element index_value: data_type</pre>`,
+                sample: { input: `4`, output: `Element 4: tuple` }
+            },
+            {
+                title: "Trapezoid Area Calculator",
+                instructions: `<p>Create a solution that accepts any three integer inputs representing the base (b1, b2) and height (h) measurements of a trapezoid in meters. Output the exact area of the trapezoid in square meters as a float value.</p><p>Trapezoid Area Formula:<br>A = [(b1 + b2) / 2] * h</p><p>The solution output should be in the format</p><pre class="bg-gray-900 p-2 rounded-md mt-1 whitespace-pre-wrap break-words">Trapezoid area: area_value square meters</pre>`,
+                sample: { input: `3\n4\n5`, output: `Trapezoid area: 17.5 square meters` }
+            },
+            {
+                title: "Sum of Data Types",
+                instructions: `<p>Create a solution that accepts five integer inputs. Output the sum of the five inputs three times, converting the inputs to the requested data type prior to finding the sum.</p><ul class="list-disc list-inside ml-4 my-2"><li>First output: sum of five inputs maintained as integer values</li><li>Second output: sum of five inputs converted to float values</li><li>Third output: sum of five inputs converted to string values (concatenate)</li></ul><p>The solution output should be in the format</p><pre class="bg-gray-900 p-2 rounded-md mt-1 whitespace-pre-wrap break-words">Integer: integer_sum_value\nFloat: float_sum_value\nString: string_sum_value</pre>`,
+                sample: { input: `1\n3\n6\n2\n7`, output: `Integer: 19\nFloat: 19.0\nString: 13627` }
+            },
+            {
+                title: "Format Student ID",
+                instructions: `<p>Create a solution that accepts an integer input representing a 9-digit unformatted student identification number. Output the identification number as a formatted string.</p><p>The solution output should be in the format</p><pre class="bg-gray-900 p-2 rounded-md mt-1 whitespace-pre-wrap break-words">111-22-3333</pre>`,
+                sample: { input: `154175430`, output: `154-17-5430` }
+            },
+            {
+                title: "Greater Than Max",
+                instructions: `<p>Create a solution that accepts an integer input to compare against the following list:</p><pre class="bg-gray-900 p-2 rounded-md my-1 whitespace-pre-wrap break-words">predef_list = [4, -27, 15, 33, -10]</pre><p>Output a Boolean value indicating whether the input value is greater than the maximum value from predef_list.</p><p>The solution output should be in the format</p><pre class="bg-gray-900 p-2 rounded-md mt-1 whitespace-pre-wrap break-words">Greater Than Max? Boolean_value</pre>`,
+                sample: { input: `20`, output: `Greater Than Max? False` }
+            },
+            {
+                title: "Water State",
+                instructions: `<p>Create a solution that accepts an integer input representing water temperature in degrees Fahrenheit. Output a description of the water state based on the following scale:</p><ul class="list-disc list-inside ml-4 my-2"><li>Below 33° F: “Frozen”</li><li>33° F to 79° F: “Cold”</li><li>80° F to 114° F: "Warm"</li><li>115° F to 211° F: "Hot"</li><li>212° F or greater: “Boiling”</li></ul><p>Additionally, output a safety comment only during the following circumstances:</p><ul class="list-disc list-inside ml-4 my-2"><li>Exactly 212° F: "Caution: Hot!"</li><li>Less than 33° F: "Watch out for ice!"</li></ul><p>The solution output should be in the format</p><pre class="bg-gray-900 p-2 rounded-md mt-1 whitespace-pre-wrap break-words">water_state\noptional_safety_comment</pre>`,
+                sample: { input: `32`, output: `Frozen\nWatch out for ice!` }
+            },
+            {
+                title: "Framework Indexer",
+                instructions: `<p>Create a solution that accepts one integer input representing the index value for any of the string elements in the following list:</p><pre class="bg-gray-900 p-2 rounded-md my-1 whitespace-pre-wrap break-words">frameworks = ["Django", "Flask", "CherryPy", "Bottle", "Web2Py", "TurboGears"]</pre><p>Output the string element of the index value entered. The solution should be placed in a try block and implement an exception of "Error" if an incompatible integer input is provided.</p><p>The solution output should be in the format</p><pre class="bg-gray-900 p-2 rounded-md mt-1 whitespace-pre-wrap break-words">frameworks_element</pre>`,
+                sample: { input: `2`, output: `CherryPy` }
+            },
+            {
+                title: "Stock Portfolio Cost",
+                instructions: `<p>Create a solution that accepts an integer input identifying how many shares of stock are to be purchased, followed by an equivalent number of string inputs representing the stock selections. The following dictionary lists available stock selections as the key with the cost per selection as the value.</p><pre class="bg-gray-900 p-2 rounded-md my-1 whitespace-pre-wrap break-words">stocks = {'TSLA': 912.86, 'BBBY': 24.84, 'AAPL': 174.26, 'SOFI': 6.92, 'KIRK': 8.72, 'AURA': 22.12, 'AMZN': 141.28, 'EMBK': 12.29, 'LVLU': 2.33}</pre><p>Output the total cost of the purchased shares of stock to two decimal places.</p><p>The solution output should be in the format</p><pre class="bg-gray-900 p-2 rounded-md mt-1 whitespace-pre-wrap break-words">Total price: $cost_of_stocks</pre>`,
+                sample: { input: `3\nSOFI\nAMZN\nLVLU`, output: `Total price: $150.53` }
+            },
+            {
+                title: "Grocery Discount Calculator",
+                instructions: `<p>Create a solution that accepts a string input representing a grocery store item and an integer input identifying the number of items purchased. The following dictionary lists available items as the key with the cost per item as the value.</p><pre class="bg-gray-900 p-2 rounded-md my-1 whitespace-pre-wrap break-words">purchase = {"bananas": 1.85, "steak": 19.99, "cookies": 4.52, "celery": 2.81, "milk": 4.34}</pre><p>Additionally, apply a discount based on the quantity:</p><ul class="list-disc list-inside ml-4 my-2"><li>Fewer than ten items: full price.</li><li>Between 10 and 20 items (inclusive): 5% discount.</li><li>21 or more items: 10% discount.</li></ul><p>Output the chosen item and total cost of the purchase to two decimal places.</p><p>The solution output should be in the format</p><pre class="bg-gray-900 p-2 rounded-md mt-1 whitespace-pre-wrap break-words">item_purchased $total_purchase_cost</pre>`,
+                sample: { input: `bananas\n12`, output: `bananas $21.09` }
+            },
+            {
+                title: "File Word Combiner",
+                instructions: `<p>Create a Python solution that accepts a text file upload. The solution should open the file, combine the words from each line into a single sentence, and then output the original content followed by the new sentence on a new line.</p><p><b>Note:</b> For the sample below, you would upload a .txt file with "cat" on the first line, "chases" on the second, and "dog" on the third.</p>`,
+                sample: { input: `(upload a .txt file)`, output: `cat\nchases\ndog\ncat chases dog` }
+            },
+            {
+                title: "CSV Reader",
+                instructions: `<p>Create a solution that accepts a CSV file as input. Each file should contain two rows of comma-separated values. Import the built-in module csv and use its open() function and reader() method to create a dictionary of key:value pairs for each row of comma-separated values in the specified file. Output the file contents as two dictionaries.</p><p><b>Note:</b> For the sample below, you would upload a file named "input1.csv" with the following content:</p><pre class="bg-gray-700 p-2 rounded-md text-sm whitespace-pre-wrap break-words">a,b,c\n100,200,300\nbananas,steak,cookies\n1.85,19.99,4.52</pre><p>The solution output should be in the format</p><pre class="bg-gray-900 p-2 rounded-md mt-1 whitespace-pre-wrap break-words">{key:value,key:value,key:value}\n{key:value,key:value,key:value}</pre>`,
+                sample: { input: `(upload input1.csv)`, output: `{'a': '100', 'b': '200', 'c': '300'}\n{'bananas': '1.85', 'steak': '19.99', 'cookies': '4.52'}` }
+            },
+            {
+                title: "Math Factorial",
+                instructions: `<p>Create a solution that accepts an integer input. Import the built-in module math and use its factorial() method to calculate the factorial of the integer input. Output the value of the factorial, as well as a Boolean value identifying whether the factorial output is greater than 100.</p><p>The solution output should be in the format</p><pre class="bg-gray-900 p-2 rounded-md mt-1 whitespace-pre-wrap break-words">factorial_value\nBoolean_value</pre>`,
+                sample: { input: `10`, output: `3628800\nTrue` }
+            },
+            {
+                title: "Pig Age Converter",
+                instructions: `<p>Create a solution that accepts an integer input representing the age of a pig. Import the existing module pigAge and use its pre-built pigAge_converter() function to calculate the human equivalent age of a pig. A year in a pig's life is equivalent to five years in a human's life.</p><p><b>Note:</b> The 'pigAge' module is simulated for this exercise.</p><p>The solution output should be in the format</p><pre class="bg-gray-900 p-2 rounded-md mt-1 whitespace-pre-wrap break-words">input_pig_age is converted_pig_age in human years</pre>`,
+                sample: { input: `8`, output: `8 is 40 in human years` }
+            }
+        ];
+
+        let currentQuestionIndex = 0;
+
+        const questionNumberEl = document.getElementById('question-number');
+        const questionContainerEl = document.getElementById('question-container');
+        const codeEditorEl = document.getElementById('code-editor');
+        const inputAreaEl = document.getElementById('input-area');
+        const fileUploaderEl = document.getElementById('file-uploader');
+        const outputAreaEl = document.getElementById('output-area');
+        const resultMessageEl = document.getElementById('result-message');
+        const runButton = document.getElementById('run-button');
+        const prevButton = document.getElementById('prev-button');
+        const nextButton = document.getElementById('next-button');
+
+        function displayQuestion(index) {
+            const question = questions[index];
+            questionNumberEl.textContent = index + 1;
+
+            let sampleHtml = `
+                <div class="mt-4">
+                    <p class="font-semibold">Sample Input/Output:</p>
+                    <p>If the input is:</p>
+                    <pre class="bg-gray-900 p-2 rounded-md mt-1 whitespace-pre-wrap break-words">${question.sample.input ? question.sample.input.replace(/\n/g, '<br>') : '(No input for this problem)'}</pre>
+                    <p class="mt-2">then the expected output is:</p>
+                    <pre class="bg-gray-900 p-2 rounded-md mt-1 whitespace-pre-wrap break-words">${question.sample.output.replace(/\n/g, '<br>')}</pre>
+                </div>
+            `;
+
+            questionContainerEl.innerHTML = `
+                <h3 class="text-xl font-semibold">${question.title}</h3>
+                ${question.instructions}
+                ${sampleHtml}
+            `;
+            
+            if (index === 13 || index === 14) {
+                inputAreaEl.classList.add('hidden');
+                fileUploaderEl.classList.remove('hidden');
+                fileUploaderEl.accept = index === 13 ? ".txt" : ".csv";
+            } else {
+                inputAreaEl.classList.remove('hidden');
+                fileUploaderEl.classList.add('hidden');
+            }
+
+            codeEditorEl.value = '';
+            inputAreaEl.value = question.sample.input;
+            fileUploaderEl.value = '';
+            outputAreaEl.textContent = '';
+            resultMessageEl.textContent = '';
+            updateNavButtons();
+        }
+
+        function updateNavButtons() {
+            prevButton.disabled = currentQuestionIndex === 0;
+            nextButton.disabled = currentQuestionIndex === questions.length - 1;
+            prevButton.classList.toggle('opacity-50', prevButton.disabled);
+            prevButton.classList.toggle('cursor-not-allowed', prevButton.disabled);
+            nextButton.classList.toggle('opacity-50', nextButton.disabled);
+            nextButton.classList.toggle('cursor-not-allowed', nextButton.disabled);
+        }
+
+        function runCode() {
+            const userCode = codeEditorEl.value.trim();
+            const userCodeLower = userCode.toLowerCase();
+            
+            const checks = [
+                () => true,
+                () => true,
+                () => true,
+                () => true,
+                () => { if (!userCode.includes('various_data_types = [')) throw new Error("NameError: name 'various_data_types' is not defined"); return true; },
+                () => true,
+                () => true,
+                () => true,
+                () => { if (!userCode.includes('predef_list = [')) throw new Error("NameError: name 'predef_list' is not defined"); return true; },
+                () => true,
+                () => { if (!userCode.includes('frameworks = [')) throw new Error("NameError: name 'frameworks' is not defined"); return true; },
+                () => { if (!userCode.includes('stocks = {')) throw new Error("NameError: name 'stocks' is not defined"); return true; },
+                () => { if (!userCode.includes('purchase = {')) throw new Error("NameError: name 'purchase' is not defined"); return true; },
+                () => { if (!userCodeLower.includes('open')) throw new Error("SyntaxError: missing required function call 'open()'"); return true; },
+                () => { if (!userCodeLower.includes('import csv')) throw new Error("ModuleNotFoundError: No module named 'csv'"); return true; },
+                () => { if (!userCodeLower.includes('import math')) throw new Error("ModuleNotFoundError: No module named 'math'"); return true; },
+                () => { if (!userCodeLower.includes('import pigage')) throw new Error("ModuleNotFoundError: No module named 'pigAge'"); return true; },
+            ];
+
+            try {
+                if (userCode === "") {
+                    outputAreaEl.textContent = "You haven't written any code!";
+                    resultMessageEl.textContent = "Try again! 🤔";
+                    resultMessageEl.className = 'mt-4 text-lg font-medium text-yellow-400';
+                    return;
+                }
+                checks[currentQuestionIndex]();
+            } catch (e) {
+                outputAreaEl.textContent = e.message;
+                resultMessageEl.textContent = "Your code has an error. ❌";
+                resultMessageEl.className = 'mt-4 text-lg font-medium text-red-400';
+                return;
+            }
+            
+            if (currentQuestionIndex === 13 || currentQuestionIndex === 14) {
+                const file = fileUploaderEl.files[0];
+                if (!file) {
+                    outputAreaEl.textContent = `Error: Please upload a ${currentQuestionIndex === 13 ? '.txt' : '.csv'} file.`;
+                    resultMessageEl.textContent = "No file selected. 😢";
+                    resultMessageEl.className = 'mt-4 text-lg font-medium text-red-400';
+                    return;
+                }
+                const reader = new FileReader();
+                reader.onload = (event) => processAndDisplayOutput(event.target.result);
+                reader.readAsText(file);
+            } else {
+                const userInput = inputAreaEl.value.trim();
+                processAndDisplayOutput(userInput);
+            }
+        }
+
+        function processAndDisplayOutput(userInput) {
+            let actualOutput = '';
+            const question = questions[currentQuestionIndex];
+            try {
+                const inputs = userInput.split('\n');
+                switch(currentQuestionIndex) {
+                    case 0: { const n=inputs.map(Number); if(n.length<3||n.some(isNaN))throw new Error("Please provide three valid numbers."); actualOutput=`Distance: ${((n[0]*15.62)+(n[1]*41.85)+(n[2]*32.67)).toFixed(2)} miles`; break; }
+                    case 1: { if(inputs.length<3)throw new Error("Provide number, operator, number."); const n1=parseFloat(inputs[0]),op=inputs[1],n2=parseFloat(inputs[2]); if(isNaN(n1)||isNaN(n2))throw new Error("Invalid numbers."); let r; if(op==='+')r=n1+n2; else if(op==='-')r=n1-n2; else if(op==='*')r=n1*n2; else if(op==='/')r=n1/n2; else throw new Error(`Invalid operator "${op}"`); actualOutput=`Result: ${r}`; break; }
+                    case 2: { if(userInput==="")throw new Error("Provide a string."); actualOutput=`Reversed: ${userInput.split("").reverse().join("")}`; break; }
+                    case 3: { const o=parseInt(inputs[0]); if(isNaN(o))throw new Error("Provide a valid number for ounces."); const t=Math.floor(o/32000); let ro=o%32000; const p=Math.floor(ro/16); ro%=16; actualOutput=`Tons: ${t}\nPounds: ${p}\nOunces: ${ro}`; break; }
+                    case 4: { const i=parseInt(inputs[0]); if(isNaN(i)||i<0||i>5)throw new Error("Provide a valid index (0-5)."); actualOutput=`Element ${i}: ${['int','float','bool','str','tuple','dict'][i]}`; break; }
+                    case 5: { const n=inputs.map(Number); if(n.length<3||n.some(isNaN))throw new Error("Provide three valid numbers."); actualOutput=`Trapezoid area: ${(((n[0]+n[1])/2)*n[2]).toFixed(1)} square meters`; break; }
+                    case 6: { const n=inputs.map(Number); if(n.length<5||n.some(isNaN))throw new Error("Provide five valid numbers."); const iS=n.reduce((a,b)=>a+b,0); actualOutput=`Integer: ${iS}\nFloat: ${iS.toFixed(1)}\nString: ${inputs.join('')}`; break; }
+                    case 7: { const id=inputs[0]; if(id.length!==9||isNaN(parseInt(id)))throw new Error("Provide a 9-digit number."); actualOutput=`${id.substring(0,3)}-${id.substring(3,5)}-${id.substring(5)}`; break; }
+                    case 8: { const n=parseInt(inputs[0]); if(isNaN(n))throw new Error("Provide a valid number."); const iG=n>33; actualOutput=`Greater Than Max? ${iG?"True":"False"}`; break; }
+                    case 9: { const t=parseInt(inputs[0]); if(isNaN(t))throw new Error("Provide a valid temperature."); let s='',c=''; if(t<33){s='Frozen';c='Watch out for ice!';}else if(t<80){s='Cold';}else if(t<115){s='Warm';}else if(t<212){s='Hot';}else{s='Boiling';if(t===212)c='Caution: Hot!';} actualOutput=s+(c?`\n${c}`:''); break; }
+                    case 10: { const i=parseInt(inputs[0]); if(isNaN(i))throw new Error("Input must be an integer."); actualOutput=(i>=0&&i<6)?["Django","Flask","CherryPy","Bottle","Web2Py","TurboGears"][i]:"Error"; break; }
+                    case 11: { const s={'TSLA':912.86,'BBBY':24.84,'AAPL':174.26,'SOFI':6.92,'KIRK':8.72,'AURA':22.12,'AMZN':141.28,'EMBK':12.29,'LVLU':2.33}; const c=parseInt(inputs[0]); if(isNaN(c)||inputs.length<c+1)throw new Error("Invalid input format."); let tc=0; for(let i=1;i<=c;i++){const t=inputs[i];if(s[t])tc+=s[t];else throw new Error(`Unknown stock: ${t}`);} actualOutput=`Total price: $${tc.toFixed(2)}`; break; }
+                    case 12: { const p={"bananas":1.85,"steak":19.99,"cookies":4.52,"celery":2.81,"milk":4.34}; const item=inputs[0]; const q=parseInt(inputs[1]); if(!p[item]||isNaN(q))throw new Error("Invalid item or quantity."); let tc=p[item]*q; if(q>=21)tc*=0.90; else if(q>=10)tc*=0.95; actualOutput=`${item} $${tc.toFixed(2)}`; break; }
+                    case 13: { const iC=userInput.trim(); const s=iC.split('\n').map(l=>l.trim()).join(' '); actualOutput=`${iC}\n${s}`; break; }
+                    case 14: { const l=userInput.trim().split('\n'); if(l.length<4)throw new Error("CSV must have at least 4 lines."); const k1=l[0].split(','),v1=l[1].split(','),d1=k1.reduce((o,k,i)=>({...o,[k.trim()]:v1[i].trim()}),{}); const k2=l[2].split(','),v2=l[3].split(','),d2=k2.reduce((o,k,i)=>({...o,[k.trim()]:v2[i].trim()}),{}); actualOutput=`${JSON.stringify(d1).replace(/"/g,"'")}\n${JSON.stringify(d2).replace(/"/g,"'")}`; break; }
+                    case 15: { const n=parseInt(inputs[0]); if(isNaN(n)||n<0)throw new Error("Provide a non-negative integer."); let f=1; for(let i=2;i<=n;i++)f*=i; actualOutput=`${f}\n${f>100?"True":"False"}`; break; }
+                    case 16: { const pA=parseInt(inputs[0]); if(isNaN(pA))throw new Error("Provide a valid age."); actualOutput=`${pA} is ${pA*5} in human years`; break; }
+                }
+                
+                outputAreaEl.textContent = actualOutput;
+                
+                if (currentQuestionIndex === 13 || currentQuestionIndex === 14) {
+                    resultMessageEl.textContent = "File processed successfully. ✅";
+                    resultMessageEl.className = 'mt-4 text-lg font-medium text-cyan-400';
+                    return;
+                }
+
+                const expectedOutput = question.sample.output;
+                if (userInput === question.sample.input && actualOutput.trim() === expectedOutput.trim()) {
+                    resultMessageEl.textContent = "Correct! Well done! 🎉";
+                    resultMessageEl.className = 'mt-4 text-lg font-medium text-green-400';
+                } else if (userInput === question.sample.input) {
+                    resultMessageEl.textContent = "Almost there! Output doesn't quite match the sample. 🧐";
+                    resultMessageEl.className = 'mt-4 text-lg font-medium text-yellow-400';
+                } else {
+                    resultMessageEl.textContent = "Output generated for your custom input. ✅";
+                    resultMessageEl.className = 'mt-4 text-lg font-medium text-cyan-400';
+                }
+
+            } catch (e) {
+                outputAreaEl.textContent = `Error: ${e.message}`;
+                resultMessageEl.textContent = "An error occurred during execution. 😢";
+                resultMessageEl.className = 'mt-4 text-lg font-medium text-red-400';
+            }
+        }
+
+        runButton.addEventListener('click', runCode);
+        prevButton.addEventListener('click', () => { if (currentQuestionIndex > 0) { currentQuestionIndex--; displayQuestion(currentQuestionIndex); } });
+        nextButton.addEventListener('click', () => { if (currentQuestionIndex < questions.length - 1) { currentQuestionIndex++; displayQuestion(currentQuestionIndex); } });
+
+        displayQuestion(currentQuestionIndex);
+    </script>
+</body>
+</html>
