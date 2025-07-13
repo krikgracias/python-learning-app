@@ -237,23 +237,23 @@
             const userCodeLower = userCode.toLowerCase();
             
             const checks = [
-                () => true,
-                () => true,
-                () => true,
-                () => true,
-                () => { if (!userCode.includes('various_data_types = [')) throw new Error("NameError: name 'various_data_types' is not defined"); return true; },
-                () => true,
-                () => true,
-                () => true,
-                () => { if (!userCode.includes('predef_list = [')) throw new Error("NameError: name 'predef_list' is not defined"); return true; },
-                () => true,
-                () => { if (!userCode.includes('frameworks = [')) throw new Error("NameError: name 'frameworks' is not defined"); return true; },
-                () => { if (!userCode.includes('stocks = {')) throw new Error("NameError: name 'stocks' is not defined"); return true; },
-                () => { if (!userCode.includes('purchase = {')) throw new Error("NameError: name 'purchase' is not defined"); return true; },
+                () => { if (!userCodeLower.includes('input') || !userCodeLower.includes('print')) throw new Error("SyntaxError: missing required functions like input() or print()"); return true; },
+                () => { if (!userCodeLower.includes('input') || !userCodeLower.includes('print') || !userCodeLower.includes('if')) throw new Error("SyntaxError: missing required logic (e.g., input, print, if)"); return true; },
+                () => { if (!userCodeLower.includes('input') || !userCodeLower.includes('print')) throw new Error("SyntaxError: missing required functions like input() or print()"); return true; },
+                () => { if (!userCodeLower.includes('input') || !userCodeLower.includes('print') || !userCodeLower.includes('%') || !userCodeLower.includes('/')) throw new Error("SyntaxError: missing required logic (e.g., input, print, %, /)"); return true; },
+                () => { if (!userCode.includes('various_data_types = [')) throw new Error("NameError: name 'various_data_types' is not defined"); if (!userCodeLower.includes('input') || !userCodeLower.includes('print') || !userCodeLower.includes('type')) throw new Error("SyntaxError: missing required logic (e.g., input, print, type)"); return true; },
+                () => { if (!userCodeLower.includes('input') || !userCodeLower.includes('print')) throw new Error("SyntaxError: missing required functions like input() or print()"); return true; },
+                () => { if (!userCodeLower.includes('input') || !userCodeLower.includes('print') || !userCodeLower.includes('int') || !userCodeLower.includes('float') || !userCodeLower.includes('str')) throw new Error("SyntaxError: missing required logic (e.g., input, print, type conversions)"); return true; },
+                () => { if (!userCodeLower.includes('input') || !userCodeLower.includes('print')) throw new Error("SyntaxError: missing required functions like input() or print()"); return true; },
+                () => { if (!userCode.includes('predef_list = [')) throw new Error("NameError: name 'predef_list' is not defined"); if (!userCodeLower.includes('input') || !userCodeLower.includes('print') || !userCodeLower.includes('max')) throw new Error("SyntaxError: missing required logic (e.g., input, print, max)"); return true; },
+                () => { if (!userCodeLower.includes('input') || !userCodeLower.includes('print') || !userCodeLower.includes('if') || !userCodeLower.includes('elif')) throw new Error("SyntaxError: missing required logic (e.g., input, print, if/elif)"); return true; },
+                () => { if (!userCode.includes('frameworks = [')) throw new Error("NameError: name 'frameworks' is not defined"); if (!userCodeLower.includes('input') || !userCodeLower.includes('print') || !userCodeLower.includes('try') || !userCodeLower.includes('except')) throw new Error("SyntaxError: missing required logic (e.g., input, print, try/except)"); return true; },
+                () => { if (!userCode.includes('stocks = {')) throw new Error("NameError: name 'stocks' is not defined"); if (!userCodeLower.includes('input') || !userCodeLower.includes('print') || !userCodeLower.includes('for')) throw new Error("SyntaxError: missing required logic (e.g., input, print, for loop)"); return true; },
+                () => { if (!userCode.includes('purchase = {')) throw new Error("NameError: name 'purchase' is not defined"); if (!userCodeLower.includes('input') || !userCodeLower.includes('print') || !userCodeLower.includes('if')) throw new Error("SyntaxError: missing required logic (e.g., input, print, if)"); return true; },
                 () => { if (!userCodeLower.includes('open')) throw new Error("SyntaxError: missing required function call 'open()'"); return true; },
-                () => { if (!userCodeLower.includes('import csv')) throw new Error("ModuleNotFoundError: No module named 'csv'"); return true; },
-                () => { if (!userCodeLower.includes('import math')) throw new Error("ModuleNotFoundError: No module named 'math'"); return true; },
-                () => { if (!userCodeLower.includes('import pigage')) throw new Error("ModuleNotFoundError: No module named 'pigAge'"); return true; },
+                () => { if (!userCodeLower.includes('import csv') || !userCodeLower.includes('open')) throw new Error("SyntaxError: missing required module or function (e.g., import csv, open)"); return true; },
+                () => { if (!userCodeLower.includes('import math') || !userCodeLower.includes('factorial')) throw new Error("SyntaxError: missing required module or function (e.g., import math, factorial)"); return true; },
+                () => { if (!userCodeLower.includes('import pigage') || !userCodeLower.includes('pigage_converter')) throw new Error("SyntaxError: missing required module or function (e.g., import pigage, pigage_converter)"); return true; },
             ];
 
             try {
@@ -266,7 +266,7 @@
                 checks[currentQuestionIndex]();
             } catch (e) {
                 outputAreaEl.textContent = e.message;
-                resultMessageEl.textContent = "Your code has an error. ❌";
+                resultMessageEl.textContent = "Your code has an error or is incomplete. ❌";
                 resultMessageEl.className = 'mt-4 text-lg font-medium text-red-400';
                 return;
             }
