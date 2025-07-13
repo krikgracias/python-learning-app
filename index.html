@@ -6,6 +6,8 @@
     <title>Python Learning App</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Pyodide script -->
+    <script src="https://cdn.jsdelivr.net/pyodide/v0.25.1/full/pyodide.js"></script>
     <style>
         body {
             font-family: 'Inter', sans-serif;
@@ -67,8 +69,8 @@
                 <h2 class="text-2xl font-semibold mb-4 text-cyan-400">Your Code</h2>
                 <textarea id="code-editor" class="w-full code-editor" placeholder="Write your Python code here..."></textarea>
                 <div class="mt-4 flex justify-between items-center">
-                    <button id="run-button" class="bg-cyan-500 hover:bg-cyan-600 text-white font-bold py-2 px-6 rounded-lg transition duration-300">
-                        Run Code
+                    <button id="run-button" class="bg-cyan-500 hover:bg-cyan-600 text-white font-bold py-2 px-6 rounded-lg transition duration-300" disabled>
+                        Loading Python...
                     </button>
                     <div class="flex gap-2">
                         <button id="prev-button" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300">
@@ -85,10 +87,10 @@
 
     <script>
         const questions = [
-             {
+            {
                 title: "Employee Travel Distance",
                 instructions: `<p>Create a solution that accepts three integer inputs representing the number of times an employee travels to a job site. Output the total distance traveled to two decimal places given the following miles per employee commute to the job site:</p><ul class="list-disc list-inside ml-4 my-2"><li>Employee A: 15.62 miles</li><li>Employee B: 41.85 miles</li><li>Employee C: 32.67 miles</li></ul><p>The solution output should be in the format:</p><pre class="bg-gray-900 p-2 rounded-md mt-1 whitespace-pre-wrap break-words">Distance: total_miles_traveled</pre>`,
-                sample: { input: `1\n2\n3`, output: "Distance: 197.33" } // Note: Sample output adjusted for easier comparison
+                sample: { input: `1\n2\n3`, output: "Distance: 197.33" }
             },
             {
                 title: "Simple Calculator",
@@ -173,6 +175,7 @@
         ];
 
         let currentQuestionIndex = 0;
+        let pyodide;
 
         const questionNumberEl = document.getElementById('question-number');
         const questionContainerEl = document.getElementById('question-container');
@@ -183,6 +186,23 @@
         const runButton = document.getElementById('run-button');
         const prevButton = document.getElementById('prev-button');
         const nextButton = document.getElementById('next-button');
+
+        async function main() {
+            pyodide = await loadPyodide();
+            // Mock modules that aren't standard
+            await pyodide.runPythonAsync(`
+                import sys
+                from unittest.mock import MagicMock
+                
+                # Create a mock module for pigAge
+                pigAge = MagicMock()
+                pigAge.pigAge_converter = lambda age: age * 5
+                sys.modules['pigAge'] = pigAge
+            `);
+            runButton.disabled = false;
+            runButton.textContent = "Run Code";
+            outputAreaEl.textContent = "Python runtime ready. Write your code and click 'Run Code'.";
+        }
 
         function displayQuestion(index) {
             const question = questions[index];
@@ -220,86 +240,13 @@
             nextButton.classList.toggle('cursor-not-allowed', nextButton.disabled);
         }
 
-        /**
-         * A very simple Python to JS translator.
-         * This is not a full-fledged transpiler but handles common cases for this app.
-         */
-        function translatePythonToJS(pyCode) {
-            let jsCode = pyCode;
-            
-            // Handle multiline strings
-            jsCode = jsCode.replace(/"""[\s\S]*?"""/g, '`' + pyCode.match(/"""[\s\S]*?"""/g) + '`');
-            jsCode = jsCode.replace(/'''[\s\S]*?'''/g, '`' + pyCode.match(/'''[\s\S]*?'''/g) + '`');
+        async function runCode() {
+            if (!pyodide) {
+                outputAreaEl.textContent = "Python runtime is not ready yet.";
+                return;
+            }
 
-            // Replace Python comments
-            jsCode = jsCode.replace(/#.*$/gm, '');
-            
-            // Replace Python print with a custom print function
-            jsCode = jsCode.replace(/print\s*\(([\s\S]*?)\)/g, 'mock_print($1)');
-            
-            // Replace Python input with a custom input function
-            jsCode = jsCode.replace(/input\(\)/g, 'mock_input()');
-            
-            // Replace Python type conversions
-            jsCode = jsCode.replace(/int\((.*)\)/g, 'parseInt($1)');
-            jsCode = jsCode.replace(/float\((.*)\)/g, 'parseFloat($1)');
-            jsCode = jsCode.replace(/str\((.*)\)/g, 'String($1)');
-            
-            // Replace Python boolean
-            jsCode = jsCode.replace(/\bTrue\b/g, 'true');
-            jsCode = jsCode.replace(/\bFalse\b/g, 'false');
-            
-            // Replace Python None
-            jsCode = jsCode.replace(/\bNone\b/g, 'null');
-
-            // Replace Python elif with else if
-            jsCode = jsCode.replace(/elif\s/g, 'else if ');
-
-            // Replace Python 'and' and 'or'
-            jsCode = jsCode.replace(/\band\b/g, '&&');
-            jsCode = jsCode.replace(/\bor\b/g, '||');
-            
-            // Replace f-strings with template literals
-            jsCode = jsCode.replace(/f"(.*?)"/g, (match, content) => '`' + content.replace(/\{(.+?)\}/g, '${$1}') + '`');
-            jsCode = jsCode.replace(/f'(.*?)'/g, (match, content) => '`' + content.replace(/\{(.+?)\}/g, '${$1}') + '`');
-
-            // Handle formatted f-strings like {var:.2f}
-            jsCode = jsCode.replace(/\$\{(.+?):\.(\d+)f\}/g, (match, varName, dp) => `\${parseFloat(${varName}).toFixed(${dp})}`);
-
-            // Replace `with open(...) as ...:`
-            jsCode = jsCode.replace(/with open\s*\((.+?)\)\s+as\s+(\w+):/g, (match, args, varName) => {
-                return `const ${varName} = open(${args}); try {`;
-            });
-
-            // Add closing brace for try block from `with open`
-            // This is a bit fragile and assumes the next indented block is the with block.
-            // A proper parser would be needed for robust handling.
-            const withBlockRegex = /(const \w+ = open\(.+?\); try \{[\s\S]*?)(?=\n\S|\n$)/g;
-            jsCode = jsCode.replace(withBlockRegex, '$1\n}');
-
-
-            // Replace `for ... in range(...)`
-            jsCode = jsCode.replace(/for\s+(\w+)\s+in\s+range\s*\((.*?)\):/g, (match, varName, rangeArgs) => {
-                const args = rangeArgs.split(',').map(a => a.trim());
-                if (args.length === 1) return `for (let ${varName} = 0; ${varName} < ${args[0]}; ${varName}++) {`;
-                if (args.length === 2) return `for (let ${varName} = ${args[0]}; ${varName} < ${args[1]}; ${varName}++) {`;
-                return `for (let ${varName} = ${args[0]}; ${varName} < ${args[1]}; ${varName} += ${args[2]}) {`;
-            });
-
-            // Replace `for ... in ...:`
-            jsCode = jsCode.replace(/for\s+(\w+)\s+in\s+([^:]+):/g, 'for (const $1 of $2) {');
-
-            // Replace `def` with `function`
-            jsCode = jsCode.replace(/def\s+(\w+)\s*\((.*?)\):/g, 'function $1($2) {');
-            
-            // Replace `import` with `let` for mock modules
-            jsCode = jsCode.replace(/import (\w+)/g, 'let $1 = mock_$1');
-            
-            return jsCode;
-        }
-
-        function runCode() {
-            const userCode = codeEditorEl.value; // Get raw code
+            const userCode = codeEditorEl.value;
             const userInput = inputAreaEl.value.trim();
             const question = questions[currentQuestionIndex];
 
@@ -309,98 +256,63 @@
                 resultMessageEl.className = 'mt-4 text-lg font-medium text-yellow-400';
                 return;
             }
-
-            // --- Execution Environment Setup ---
-            const inputs = userInput.split('\n');
-            let inputIndex = 0;
-            const outputs = [];
             
-            const mock_input = () => {
-                if (inputIndex < inputs.length) {
-                    return inputs[inputIndex++];
-                }
-                return '';
-            };
+            outputAreaEl.textContent = "Running...";
+            resultMessageEl.textContent = "";
 
-            const mock_print = (...args) => {
-                outputs.push(args.map(arg => {
-                    if (typeof arg === 'object' && arg !== null) {
-                        // Simple JSON stringify for objects/arrays, mimicking Python's dict/list print
-                        return JSON.stringify(arg).replace(/"/g, "'");
-                    }
-                    return String(arg);
-                }).join(' '));
-            };
-            
-            const mockFileSystem = {
-                'word_file.txt': 'cat\nchases\ndog',
-                'input1.csv': 'a,b,c\n100,200,300\nbananas,steak,cookies\n1.85,19.99,4.52',
-                'input2.csv': 'd,e,f\n400,500,600\ncelery,milk,bread\n5.63,2.81,4.34'
-            };
-
-            const mock_open = (filename, mode = 'r') => {
-                const cleanFilename = filename.trim().replace(/['"]/g, '');
-                if (mode.includes('r') && !mockFileSystem[cleanFilename]) {
-                     throw new Error(`FileNotFoundError: [Errno 2] No such file or directory: '${cleanFilename}'`);
-                }
-                return {
-                    _content: (mockFileSystem[cleanFilename] || '').split('\n'),
-                    _filename: cleanFilename,
-                    _mode: mode,
-                    read: function() { return this._content.join('\n'); },
-                    readline: function() { return this._content.shift() || ''; },
-                    readlines: function() { return this._content; },
-                    write: function(data) { 
-                        if (!this._mode.includes('w') && !this._mode.includes('a')) throw new Error('io.UnsupportedOperation: not writable');
-                        if (this._mode.includes('w')) this._content = [];
-                        this._content.push(...data.split('\n'));
-                    },
-                    close: function() { mockFileSystem[this._filename] = this._content.join('\n'); }
-                };
-            };
-            
-            const mock_csv = { reader: (file) => file.readlines().map(line => line.split(',')) };
-            const mock_math = { factorial: (n) => { if (n < 0) throw new Error('factorial() not defined for negative numbers'); if (n === 0) return 1; let r = 1; for (let i = 2; i <= n; i++) r *= i; return r; } };
-            const mock_pigAge = { pigAge_converter: (age) => age * 5 };
-
-
-            // --- Execute User Code ---
             try {
-                // This is a huge simplification. A real implementation would need a proper parser (like AST).
-                // We'll use a sandboxed Function constructor.
-                const sandboxedExecution = new Function('mock_input', 'mock_print', 'open', 'mock_csv', 'mock_math', 'mock_pigAge', `
-                    // Mock some built-ins and modules
-                    const input = mock_input;
-                    const print = mock_print;
-                    const csv = mock_csv;
-                    const math = mock_math;
-                    const pigAge = mock_pigAge;
+                // Set up mock file system for file-based questions
+                const mockFileSystem = {
+                    'word_file.txt': 'cat\nchases\ndog',
+                    'input1.csv': 'a,b,c\n100,200,300\nbananas,steak,cookies\n1.85,19.99,4.52',
+                    'input2.csv': 'd,e,f\n400,500,600\ncelery,milk,bread\n5.63,2.81,4.34'
+                };
+                for (const [filename, content] of Object.entries(mockFileSystem)) {
+                    pyodide.FS.writeFile(filename, content, { encoding: "utf8" });
+                }
 
-                    // Helper for type()
-                    const type = (v) => {
-                        if (Array.isArray(v)) return { __name__: 'list' };
-                        if (v === null) return { __name__: 'NoneType' };
-                        const jsType = typeof v;
-                        switch(jsType) {
-                            case 'number': return { __name__: Number.isInteger(v) ? 'int' : 'float' };
-                            case 'string': return { __name__: 'str' };
-                            case 'boolean': return { __name__: 'bool' };
-                            case 'object': return { __name__: 'dict' }; // Simplified
-                            default: return { __name__: 'unknown' };
-                        }
-                    };
+                // Pass user input to the Python environment
+                pyodide.globals.set("user_input", userInput);
 
-                    ${userCode}
-                `);
+                // Prepare the Python code to run
+                const pythonCode = `
+import sys
+import io
+
+# Redirect stdout to capture print statements
+sys.stdout = io.StringIO()
+sys.stderr = io.StringIO()
+
+# Patch the built-in input() function
+_input_lines = user_input.split('\\n')
+_input_iter = iter(_input_lines)
+def custom_input(prompt=""):
+    try:
+        return next(_input_iter)
+    except StopIteration:
+        return ""
+__builtins__.input = custom_input
+
+# User's code will be executed here
+${userCode}
+
+# Retrieve the output
+sys.stdout.getvalue()
+                `;
+
+                // Execute the code
+                const pyResult = await pyodide.runPythonAsync(pythonCode);
                 
-                sandboxedExecution(mock_input, mock_print, mock_open, mock_csv, mock_math, mock_pigAge);
-                
-                const actualOutput = outputs.join('\n');
+                const stderr = pyodide.runPython("sys.stderr.getvalue()");
+                if (stderr) {
+                    throw new Error(stderr);
+                }
+
+                const actualOutput = pyResult.trim();
                 outputAreaEl.textContent = actualOutput;
 
                 // --- Compare with sample output ---
-                // Normalize outputs for comparison to avoid subtle formatting issues
-                const normalize = (str) => str.replace(/\s+/g, ' ').trim();
+                const normalize = (str) => str.replace(/\s+/g, ' ').replace(/'/g, '"').trim();
                 
                 if (normalize(actualOutput) === normalize(question.sample.output)) {
                     resultMessageEl.textContent = "Correct! Well done! 🎉";
@@ -414,7 +326,7 @@
                 }
 
             } catch (e) {
-                outputAreaEl.textContent = `${e.name}: ${e.message}`;
+                outputAreaEl.textContent = e.message;
                 resultMessageEl.textContent = "Your code has an error. ❌";
                 resultMessageEl.className = 'mt-4 text-lg font-medium text-red-400';
             }
@@ -424,6 +336,7 @@
         prevButton.addEventListener('click', () => { if (currentQuestionIndex > 0) { currentQuestionIndex--; displayQuestion(currentQuestionIndex); } });
         nextButton.addEventListener('click', () => { if (currentQuestionIndex < questions.length - 1) { currentQuestionIndex++; displayQuestion(currentQuestionIndex); } });
 
+        main();
         displayQuestion(currentQuestionIndex);
     </script>
 </body>
